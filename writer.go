@@ -161,6 +161,69 @@ func (w *DataWriter) WriteSubblock(index int, writeFn func(sw *DataWriter) error
 	return w.WriteBytes(buf.Bytes())
 }
 
+// WriteString writes a tagged string subblock.
+func (w *DataWriter) WriteString(index int, s string) error {
+	return w.WriteSubblock(index, func(sw *DataWriter) error {
+		if err := sw.WriteVarUint(uint64(len(s))); err != nil {
+			return err
+		}
+		if err := sw.WriteBool(true); err != nil {
+			return err
+		}
+		return sw.WriteBytes([]byte(s))
+	})
+}
+
+// WriteLwwString writes a tagged LwwValue[string].
+func (w *DataWriter) WriteLwwString(index int, ts CrdtId, val string) error {
+	return w.WriteSubblock(index, func(sw *DataWriter) error {
+		if err := sw.WriteId(1, ts); err != nil {
+			return err
+		}
+		return sw.WriteString(2, val)
+	})
+}
+
+// WriteLwwBool writes a tagged LwwValue[bool].
+func (w *DataWriter) WriteLwwBool(index int, ts CrdtId, val bool) error {
+	return w.WriteSubblock(index, func(sw *DataWriter) error {
+		if err := sw.WriteId(1, ts); err != nil {
+			return err
+		}
+		return sw.WriteTaggedBool(2, val)
+	})
+}
+
+// WriteLwwId writes a tagged LwwValue[CrdtId].
+func (w *DataWriter) WriteLwwId(index int, ts CrdtId, val CrdtId) error {
+	return w.WriteSubblock(index, func(sw *DataWriter) error {
+		if err := sw.WriteId(1, ts); err != nil {
+			return err
+		}
+		return sw.WriteId(2, val)
+	})
+}
+
+// WriteLwwByte writes a tagged LwwValue[uint8].
+func (w *DataWriter) WriteLwwByte(index int, ts CrdtId, val uint8) error {
+	return w.WriteSubblock(index, func(sw *DataWriter) error {
+		if err := sw.WriteId(1, ts); err != nil {
+			return err
+		}
+		return sw.WriteTaggedByte(2, val)
+	})
+}
+
+// WriteLwwFloat writes a tagged LwwValue[float32].
+func (w *DataWriter) WriteLwwFloat(index int, ts CrdtId, val float32) error {
+	return w.WriteSubblock(index, func(sw *DataWriter) error {
+		if err := sw.WriteId(1, ts); err != nil {
+			return err
+		}
+		return sw.WriteTaggedFloat(2, val)
+	})
+}
+
 // WriteBlock writes a top-level block with 8-byte header and payload.
 func (w *DataWriter) WriteBlock(blockType, minVersion, currentVersion uint8, writeFn func(bw *DataWriter) error) error {
 	var buf bytes.Buffer
