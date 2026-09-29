@@ -219,3 +219,74 @@ func TestReadUnknownBlock(t *testing.T) {
 		t.Errorf("expected payload %q, got %q", payload, ub.Data)
 	}
 }
+
+func TestReadSceneLineItemBlock_NoMoveID_FollowedByTag7(t *testing.T) {
+	var buf bytes.Buffer
+	w := rmscene.NewDataWriter(&buf)
+
+	pts := []rmscene.Point{
+		{X: 10.5, Y: 20.25, Speed: 100, Direction: 50, Width: 16, Pressure: 200},
+	}
+	line := &rmscene.Line{
+		Color:          rmscene.PenColorBlack,
+		Tool:           rmscene.PenToolBallpoint1,
+		Points:         pts,
+		ThicknessScale: 1.0,
+		StartingLength: 0.0,
+		MoveID:         nil, // NO MoveID
+	}
+	block := &rmscene.SceneLineItemBlock{
+		ParentID: rmscene.CrdtId{Part1: 1, Part2: 1},
+		Item: rmscene.Item[*rmscene.Line]{
+			ItemID:        rmscene.CrdtId{Part1: 1, Part2: 2},
+			LeftID:        rmscene.CrdtId{Part1: 0, Part2: 0},
+			RightID:       rmscene.CrdtId{Part1: 0, Part2: 0},
+			DeletedLength: 0,
+			Value:         line,
+		},
+		ExtraValueData: nil,
+	}
+
+	if err := w.WriteSceneLineItemBlock(block, 2); err != nil {
+		t.Fatalf("failed to write block: %v", err)
+	}
+
+	raw := buf.Bytes()
+	// Trailing tag 7 (TagID = 0xF -> (7 << 4) | 0xF = 0x7F) followed by CrdtId (0x01, 0x05)
+	trailingTag7 := []byte{0x7F, 0x01, 0x05}
+
+	var buf2 bytes.Buffer
+	w2 := rmscene.NewDataWriter(&buf2)
+	blockPayload := append(raw[8:], trailingTag7...)
+	if err := w2.WriteUint32(uint32(len(blockPayload))); err != nil {
+		t.Fatal(err)
+	}
+	if err := w2.WriteUint8(0); err != nil {
+		t.Fatal(err)
+	}
+	if err := w2.WriteUint8(1); err != nil {
+		t.Fatal(err)
+	}
+	if err := w2.WriteUint8(2); err != nil {
+		t.Fatal(err)
+	}
+	if err := w2.WriteUint8(uint8(rmscene.BlockTypeSceneLine)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := buf2.Write(blockPayload); err != nil {
+		t.Fatal(err)
+	}
+
+	s := rmscene.NewDataStream(bytes.NewReader(buf2.Bytes()))
+	readB, err := rmscene.ReadBlock(s)
+	if err != nil {
+		t.Fatalf("expected successful block read without subblock overflow, got: %v", err)
+	}
+	lineB, ok := readB.(*rmscene.SceneLineItemBlock)
+	if !ok {
+		t.Fatalf("expected *SceneLineItemBlock, got %T", readB)
+	}
+	if lineB.Item.Value.MoveID != nil {
+		t.Errorf("expected nil MoveID, got %v", lineB.Item.Value.MoveID)
+	}
+}

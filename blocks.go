@@ -246,7 +246,8 @@ func readSceneLineItemBlock(s *DataStream, info MainBlockInfo) (*SceneLineItemBl
 		}
 		_ = itemType // 0x03 for line item
 
-		line, err = readLine(s, info.CurrentVersion)
+		subEndPos := subStart + int64(subLen)
+		line, err = readLine(s, info.CurrentVersion, subEndPos)
 		if err != nil {
 			return nil, err
 		}
@@ -276,7 +277,7 @@ func readSceneLineItemBlock(s *DataStream, info MainBlockInfo) (*SceneLineItemBl
 	}, nil
 }
 
-func readLine(s *DataStream, version uint8) (*Line, error) {
+func readLine(s *DataStream, version uint8, endPos int64) (*Line, error) {
 	toolID, err := s.ReadTaggedInt(1)
 	if err != nil {
 		return nil, err
@@ -327,9 +328,9 @@ func readLine(s *DataStream, version uint8) (*Line, error) {
 		return nil, err
 	}
 
-	// Optional Tag 7: move_id
+	// Optional Tag 7: move_id, only if at least 3 bytes remain in subblock 6
 	var moveID *CrdtId
-	if s.CheckTag(7, TagID) {
+	if endPos-s.Tell() >= 3 && s.CheckTag(7, TagID) {
 		mid, err := s.ReadId(7)
 		if err == nil {
 			moveID = &mid
