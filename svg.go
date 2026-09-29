@@ -138,8 +138,17 @@ func RenderToSVG(blocks []Block, opts ...SVGOption) string {
 			}
 			pts.WriteString(fmt.Sprintf("%.3f,%.3f", Scale(float64(p.X)), Scale(float64(p.Y))))
 		}
+		opacity := config.HighlighterOpacity
+		if hl.Color.Alpha > 0 {
+			opacity = hl.Color.Alpha
+		}
+		strokeWidth := config.HighlighterWidth
+		if hl.Line.Tool == PenToolShader {
+			strokeWidth = 16.0
+		}
+
 		out.WriteString(fmt.Sprintf("\t\t<polyline fill=\"none\" stroke=\"rgb(%d,%d,%d)\" stroke-opacity=\"%.2f\" stroke-width=\"%.1f\" stroke-linecap=\"square\" stroke-linejoin=\"round\" points=\"%s\" />\n",
-			hl.Color.R, hl.Color.G, hl.Color.B, config.HighlighterOpacity, config.HighlighterWidth, pts.String()))
+			hl.Color.R, hl.Color.G, hl.Color.B, opacity, strokeWidth, pts.String()))
 	}
 	out.WriteString("\t</g>\n")
 

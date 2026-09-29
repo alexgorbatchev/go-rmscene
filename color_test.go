@@ -12,7 +12,7 @@ func TestExtractHighlighterColor_PaperPro(t *testing.T) {
 	extraData := []byte{0x84, 0x01, 0xE5, 0xD0, 0x8B, 0x00}
 	col := rmscene.ExtractHighlighterColor(extraData)
 
-	expected := rmscene.Color{R: 139, G: 208, B: 229}
+	expected := rmscene.Color{R: 139, G: 208, B: 229, Alpha: rmscene.DefaultHighlighterOpacity}
 	if col != expected {
 		t.Fatalf("expected %v, got %v", expected, col)
 	}
@@ -28,7 +28,7 @@ func TestExtractHighlighterColor_WithOffset(t *testing.T) {
 	}
 	col := rmscene.ExtractHighlighterColor(extraData)
 
-	expected := rmscene.Color{R: 251, G: 247, B: 25}
+	expected := rmscene.Color{R: 251, G: 247, B: 25, Alpha: rmscene.DefaultHighlighterOpacity}
 	if col != expected {
 		t.Fatalf("expected %v, got %v", expected, col)
 	}

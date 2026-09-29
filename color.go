@@ -62,6 +62,15 @@ func ExtractHighlighterColorWithFallback(extraBytes []byte, fallback Color) Colo
 	bVal := extraBytes[idx+2]
 	gVal := extraBytes[idx+3]
 	rVal := extraBytes[idx+4]
-	// extraBytes[idx+5] is alpha (typically 0x00 or ignored for stroke color)
-	return Color{R: rVal, G: gVal, B: bVal}
+	aVal := extraBytes[idx+5]
+
+	alpha := fallback.Alpha
+	if alpha == 0 {
+		alpha = DefaultHighlighterOpacity
+	}
+	if aVal > 0 && aVal < 255 {
+		alpha = float64(aVal) / 255.0
+	}
+
+	return Color{R: rVal, G: gVal, B: bVal, Alpha: alpha}
 }

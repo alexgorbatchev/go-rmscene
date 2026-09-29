@@ -170,16 +170,17 @@ func (t PenTool) String() string {
 	}
 }
 
-// IsHighlighter returns true if the tool is any variation of the highlighter.
+// IsHighlighter returns true if the tool is any variation of the highlighter or shader wash.
 func (t PenTool) IsHighlighter() bool {
-	return t == PenToolHighlighter1 || t == PenToolHighlighter2
+	return t == PenToolHighlighter1 || t == PenToolHighlighter2 || t == PenToolShader
 }
 
-// Color represents an 8-bit RGB color.
+// Color represents an RGB color with optional alpha transparency.
 type Color struct {
-	R uint8 `json:"r"`
-	G uint8 `json:"g"`
-	B uint8 `json:"b"`
+	R     uint8   `json:"r"`
+	G     uint8   `json:"g"`
+	B     uint8   `json:"b"`
+	Alpha float64 `json:"alpha,omitempty"`
 }
 
 func (c Color) String() string {

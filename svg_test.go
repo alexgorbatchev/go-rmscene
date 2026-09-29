@@ -96,3 +96,37 @@ func TestRenderToSVG_PaintersOrderAndPaperProColor(t *testing.T) {
 		t.Fatalf("expected stroke-linecap=\"round\" in pen strokes, got:\n%s", svg)
 	}
 }
+
+func TestRenderToSVG_ShaderTool(t *testing.T) {
+	// Shader stroke with Paper Pro blue RGBA (48, 74, 224, 77)
+	// Little-endian BGRA: B: 224 (0xE0), G: 74 (0x4A), R: 48 (0x30), A: 77 (0x4D)
+	blueExtra := []byte{0x84, 0x01, 0xE0, 0x4A, 0x30, 0x4D}
+	shaderLine := &rmscene.Line{
+		Color:          rmscene.PenColorHighlight,
+		Tool:           rmscene.PenToolShader,
+		Points:         []rmscene.Point{{X: 100, Y: 100}, {X: 200, Y: 100}},
+		ThicknessScale: 1.0,
+	}
+	shaderBlock := &rmscene.SceneLineItemBlock{
+		Item:           rmscene.Item[*rmscene.Line]{Value: shaderLine},
+		ExtraValueData: blueExtra,
+	}
+
+	svg := rmscene.RenderToSVG([]rmscene.Block{shaderBlock})
+
+	// Shader must be rendered as a wash in the highlighters group
+	hlIdx := strings.Index(svg, "<g id=\"highlighters\">")
+	if hlIdx == -1 {
+		t.Fatal("missing <g id=\"highlighters\"> group in SVG")
+	}
+
+	// Must contain the blue color rgb(48,74,224)
+	if !strings.Contains(svg, "rgb(48,74,224)") {
+		t.Fatalf("expected blue shader rgb(48,74,224) in highlighters group, got:\n%s", svg)
+	}
+
+	// Must respect alpha 77/255 = ~0.30
+	if !strings.Contains(svg, "stroke-opacity=\"0.30\"") {
+		t.Fatalf("expected stroke-opacity=\"0.30\" for shader stroke, got:\n%s", svg)
+	}
+}
