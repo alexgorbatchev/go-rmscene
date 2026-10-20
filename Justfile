@@ -9,3 +9,7 @@ test:
 
 # Run checks
 check: test
+
+# Download project dependencies for local development
+setup:
+    go mod download
